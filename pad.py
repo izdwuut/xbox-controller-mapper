@@ -8,8 +8,27 @@ from constants import *
 def handle_input(event, value):
     if 'BTN' in event:
         handle_button(event, value)
+    if 'HAT' in event:
+        handle_hat(event, value)
     if 'ABS' in event:
         handle_trackball(event, value)
+
+
+def handle_hat(event, state):
+    if not state:
+        return
+    if 'X' in event:
+        if state == 1:
+            x = 1
+        elif state == -1:
+            x = -1
+        mouse.move(x, 0, absolute=False)
+    elif 'Y' in event:
+        if state == 1:
+            y = 1
+        elif state == -1:
+            y = -1
+        mouse.move(0, y, absolute=False)
 
 
 def handle_trackball(event, value):
