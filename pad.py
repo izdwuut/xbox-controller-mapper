@@ -1,5 +1,7 @@
 import keyboard, inputs, mouse
 from inputs import get_gamepad
+from multiprocessing import Process, Manager
+from constants import *
 
 
 # map BTN_SOUTH to 'A' etc.
@@ -29,12 +31,39 @@ def handle_button(event, state):
         mouse.click(button='right')
 
 
-while True:
-    for event in get_gamepad():
-        # print(event.ev_type)
-        handle_input(event.code, event.state)
-        if 'BTN' in event.code:
-            print(event.ev_type)
+class Events:
+    def __init__(self):
+        self.events = {}
 
+
+def f(events):
+    i = 1
+    print(events)
+    while True:
+        i = i + 1
+        # print(events.events)
+        # print(str(i))
+        for code, state in events.items():
+            handle_input(code, state)
+
+
+def buffer_input(event, events):
+    events[event.code] = event.state
+
+
+if __name__ == '__main__':
+    e = Manager().dict()
+    print(e)
+    p = Process(target=f, args=(e,))
+    p.start()
+
+    while True:
+        for event in get_gamepad():
+            # print(event.ev_type)
+            # handle_input(event.code, event.state)
+            # print(event.ev_type, event.code, event.state)
+            buffer_input(event, e)
+            # p.join()
+            print(e)
 
 
