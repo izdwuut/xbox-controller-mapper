@@ -58,12 +58,21 @@ class XInput:
             return True
         return False
 
+    def is_left_thumb_x_move(self):
+        if abs(self.gamepad.sThumbLX) > self.get_dead_zone():
+            return True
+        return False
+
+    # def get_value(self, button):
+
+    def get_dead_zone(self):
+        return float(self.config['general']['DEAD_ZONE']) * int(self.config['general']['MAGNITUDE'])
+
     def get_state(self):
         self.api.XInputGetState(ctypes.wintypes.WORD(0), ctypes.pointer(self.state))
 
     def __init__(self):
         self.state = XINPUT_STATE()
-
         self.gamepad = self.state.Gamepad
         from pad import SETTINGS
         self.config = ConfigParser()
