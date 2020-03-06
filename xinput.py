@@ -53,13 +53,17 @@ class XInput:
         self.api.XInputSetState(0, ctypes.byref(vibration))
 
     def is_button_pressed(self, button):
+        self.get_state()
         if getattr(self, 'XINPUT_GAMEPAD_' + button) & self.gamepad.wButtons:
             return True
         return False
 
+    def get_state(self):
+        self.api.XInputGetState(ctypes.wintypes.WORD(0), ctypes.pointer(self.state))
+
     def __init__(self):
         self.state = XINPUT_STATE()
-        self.api.XInputGetState(ctypes.wintypes.WORD(0), ctypes.pointer(self.state))
+
         self.gamepad = self.state.Gamepad
         from pad import SETTINGS
         self.config = ConfigParser()
