@@ -58,12 +58,13 @@ class XInput:
             return True
         return False
 
-    def is_left_thumb_x_move(self):
-        if abs(self.gamepad.sThumbLX) > self.get_dead_zone():
+    def is_thumb_move(self, thumb):
+        if abs(getattr(self.gamepad, thumb)) > self.get_dead_zone():
             return True
         return False
 
-    # def get_value(self, button):
+    def get_value(self, thumb):
+        return getattr(self.gamepad, thumb)
 
     def get_dead_zone(self):
         return float(self.config['general']['DEAD_ZONE']) * int(self.config['general']['MAGNITUDE'])
