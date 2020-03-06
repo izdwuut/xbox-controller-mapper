@@ -2,6 +2,7 @@ import mouse, keyboard
 from configparser import ConfigParser
 from time import sleep
 from xinput import XInput
+from math import ceil, floor
 
 SETTINGS = 'settings.ini'
 
@@ -35,11 +36,6 @@ class Gamepad():
         'MOUSE_MOVE_Y': 1,
         'MOUSE_MOVE_-X': -1,
         'MOUSE_MOVE_-Y': -1
-    }
-
-    mouse_scroll_events = {
-        'MOUSE_SCROLL_DOWN': -0.5,
-        'MOUSE_SCROLL_UP': 0.5
     }
 
     # move to a Keyboard class
@@ -130,7 +126,7 @@ class Gamepad():
         return action in self.mouse_move_events
 
     def get_normalised_thumb_value(self, value):
-        return (float(value) / int(self.config['general']['THUMBS_MAGNITUDE'])) * 5 * float(
+        return (float(value) / int(self.config['general']['THUMBS_MAGNITUDE'])) * float(
             self.config['general']['SENSITIVITY'])
 
     def get_normalised_trigger_value(self, value):
@@ -157,16 +153,18 @@ class Gamepad():
         elif button == 'RIGHT_TRIGGER':
             value = self.xinput.get_value('bRightTrigger')
             normalised_value = abs(self.get_normalised_trigger_value(value))
-
-
-        if action == 'MOUSE_MOVE_X':
-            mouse.move(normalised_value, 0, absolute=False)
-        elif action == 'MOUSE_MOVE_-X':
-            mouse.move(-normalised_value, 0, absolute=False)
-        elif action == 'MOUSE_MOVE_Y':
-            mouse.move(0, -normalised_value, absolute=False)
         else:
-            mouse.move(0, normalised_value, absolute=False)
+            normalised_value = 1
+
+        print(action, ceil(normalised_value))
+        if action == 'MOUSE_MOVE_X':
+            mouse.move(ceil(normalised_value), 0, absolute=False)
+        elif action == 'MOUSE_MOVE_-X':
+            mouse.move(floor(-normalised_value), 0, absolute=False)
+        elif action == 'MOUSE_MOVE_Y':
+            mouse.move(0, floor(-normalised_value), absolute=False)
+        else:
+            mouse.move(0, ceil(normalised_value), absolute=False)
 
     def detect_button_press(self):
         for button in self.buttons:
@@ -191,6 +189,10 @@ class Gamepad():
         self.config = ConfigParser()
         self.config.read(SETTINGS)
         self.xinput = XInput()
+        self.mouse_scroll_events = {
+            'MOUSE_SCROLL_DOWN': -float(self.config['general']['SCROLL_SPEED']),
+            'MOUSE_SCROLL_UP': float(self.config['general']['SCROLL_SPEED'])
+        }
 
 
 if __name__ == '__main__':
