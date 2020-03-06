@@ -59,15 +59,23 @@ class XInput:
         return False
 
     def is_thumb_move(self, thumb):
-        if abs(getattr(self.gamepad, thumb)) > self.get_dead_zone():
+        if abs(getattr(self.gamepad, thumb)) > self.get_thumbs_dead_zone():
             return True
         return False
 
-    def get_value(self, thumb):
-        return getattr(self.gamepad, thumb)
+    def is_trigger_pressed(self, trigger):
+        if getattr(self.gamepad, trigger) & 0xff > self.get_triggers_dead_zone():
+            return True
+        return False
 
-    def get_dead_zone(self):
-        return float(self.config['general']['DEAD_ZONE']) * int(self.config['general']['MAGNITUDE'])
+    def get_value(self, item):
+        return getattr(self.gamepad, item)
+
+    def get_thumbs_dead_zone(self):
+        return float(self.config['general']['THUMBS_DEAD_ZONE']) * int(self.config['general']['THUMBS_MAGNITUDE'])
+
+    def get_triggers_dead_zone(self):
+        return float(self.config['general']['TRIGGERS_DEAD_ZONE']) * int(self.config['general']['TRIGGERS_MAGNITUDE'])
 
     def get_state(self):
         self.api.XInputGetState(ctypes.wintypes.WORD(0), ctypes.pointer(self.state))

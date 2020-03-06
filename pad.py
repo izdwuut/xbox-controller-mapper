@@ -129,18 +129,44 @@ class Gamepad():
     def is_mouse_move(self, action):
         return action in self.mouse_move_events
 
+    def get_normalised_thumb_value(self, value):
+        return (float(value) / int(self.config['general']['THUMBS_MAGNITUDE'])) * 5 * float(
+            self.config['general']['SENSITIVITY'])
+
+    def get_normalised_trigger_value(self, value):
+        return (float(value & 0xff) / int(self.config['general']['TRIGGERS_MAGNITUDE'])) * 10 * float(
+            self.config['general']['SENSITIVITY'])
+
+    # TODO: refactor
     def move_mouse(self, button, action):
         if button == 'LEFT_THUMB_X' or button == 'LEFT_THUMB_-X':
             value = self.xinput.get_value('sThumbLX')
+            normalised_value = abs(self.get_normalised_thumb_value(value))
         elif button == 'LEFT_THUMB_Y' or button == 'LEFT_THUMB_-Y':
             value = self.xinput.get_value('sThumbLY')
-        else:
-            value = 1
-        normalised_value = (float(value) / int(self.config['general']['MAGNITUDE'])) * 5 * float(self.config['general']['SENSITIVITY'])
-        if action == 'MOUSE_MOVE_X' or action == 'MOUSE_MOVE_-X':
+            normalised_value = abs(self.get_normalised_thumb_value(value))
+        elif button == 'RIGHT_THUMB_X' or button == 'RIGHT_THUMB_-X':
+            value = self.xinput.get_value('sThumbRX')
+            normalised_value = abs(self.get_normalised_thumb_value(value))
+        elif button == 'RIGHT_THUMB_Y' or button == 'RIGHT_THUMB_-Y':
+            value = self.xinput.get_value('sThumbRY')
+            normalised_value = abs(self.get_normalised_thumb_value(value))
+        elif button == 'LEFT_TRIGGER':
+            value = self.xinput.get_value('bLeftTrigger')
+            normalised_value = abs(self.get_normalised_trigger_value(value))
+        elif button == 'RIGHT_TRIGGER':
+            value = self.xinput.get_value('bRightTrigger')
+            normalised_value = abs(self.get_normalised_trigger_value(value))
+
+
+        if action == 'MOUSE_MOVE_X':
             mouse.move(normalised_value, 0, absolute=False)
-        if action == 'MOUSE_MOVE_Y' or action == 'MOUSE_MOVE_-Y':
+        elif action == 'MOUSE_MOVE_-X':
+            mouse.move(-normalised_value, 0, absolute=False)
+        elif action == 'MOUSE_MOVE_Y':
             mouse.move(0, -normalised_value, absolute=False)
+        else:
+            mouse.move(0, normalised_value, absolute=False)
 
     def detect_button_press(self):
         for button in self.buttons:
@@ -150,9 +176,16 @@ class Gamepad():
                 self.release_mouse(button)
                 self.release_key(button)
 
+    def detect_trigger_press(self):
+        if self.xinput.is_trigger_pressed('bLeftTrigger'):
+            self.handle_input('LEFT_TRIGGER')
+        if self.xinput.is_trigger_pressed('bRightTrigger'):
+            self.handle_input('RIGHT_TRIGGER')
+
     def run(self):
         self.detect_button_press()
         self.detect_thumb_move()
+        self.detect_trigger_press()
 
     def __init__(self):
         self.config = ConfigParser()
