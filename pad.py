@@ -3,6 +3,7 @@ from configparser import ConfigParser
 from time import sleep
 from xinput import XInput
 from math import ceil, floor
+import threading
 
 SETTINGS = 'settings.ini'
 
@@ -48,13 +49,18 @@ class Gamepad():
         return False
 
     def press_key(self, button, action):
+        if self.is_button_pressed[button]:
+            return
         keyboard.press(action)
         self.is_button_pressed[button] = True
+        print('pressed')
+        threading.Timer(0.2, self.release_key, args=[button]).start()
 
     def press_mouse(self, button, action):
-        if not self.is_button_pressed[button]:
-            mouse.hold(button=self.mouse_click_events[action])
-            self.is_button_pressed[button] = True
+        if self.is_button_pressed[button]:
+            return
+        mouse.hold(button=self.mouse_click_events[action])
+        self.is_button_pressed[button] = True
 
     def scroll_mouse(self, action):
         if action == 'MOUSE_SCROLL_DOWN':
@@ -97,6 +103,7 @@ class Gamepad():
         if action and self.is_key_press(action) and button in self.is_button_pressed and self.is_button_pressed[button]:
             keyboard.release(action)
             self.is_button_pressed[button] = False
+
 
     # TODO: refactor
     def detect_thumb_move(self):
@@ -156,7 +163,6 @@ class Gamepad():
         else:
             normalised_value = 1
 
-        print(action, ceil(normalised_value))
         if action == 'MOUSE_MOVE_X':
             mouse.move(ceil(normalised_value), 0, absolute=False)
         elif action == 'MOUSE_MOVE_-X':
@@ -170,15 +176,27 @@ class Gamepad():
         for button in self.buttons:
             if self.xinput.is_button_pressed(button):
                 self.handle_input(button)
-            else:
+            elif button in self.is_button_pressed and self.is_button_pressed[button]:
                 self.release_mouse(button)
                 self.release_key(button)
 
     def detect_trigger_press(self):
+        button = 'LEFT_TRIGGER'
         if self.xinput.is_trigger_pressed('bLeftTrigger'):
-            self.handle_input('LEFT_TRIGGER')
+            self.handle_input(button)
+            self.is_button_pressed[button] = True
+        elif button in self.is_button_pressed and self.is_button_pressed[button]:
+            self.release_mouse('LEFT_TRIGGER')
+            self.release_key('LEFT_TRIGGER')
+
+        button = 'RIGHT_TRIGGER'
         if self.xinput.is_trigger_pressed('bRightTrigger'):
-            self.handle_input('RIGHT_TRIGGER')
+            self.handle_input(button)
+            self.is_button_pressed[button] = True
+        elif button in self.is_button_pressed and self.is_button_pressed[button]:
+            self.release_mouse('RIGHT_TRIGGER')
+            self.release_key('RIGHT_TRIGGER')
+
 
     def run(self):
         self.detect_button_press()
@@ -197,6 +215,7 @@ class Gamepad():
 
 if __name__ == '__main__':
     gamepad = Gamepad()
+    print('XBox Controller Mapper started. Press Ctrl+C to stop.')
     while True:
         gamepad.run()
         sleep(float(gamepad.config['general']['DELAY']))

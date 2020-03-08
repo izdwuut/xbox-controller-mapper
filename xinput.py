@@ -56,6 +56,8 @@ class XInput:
         self.get_state()
         if getattr(self, 'XINPUT_GAMEPAD_' + button) & self.gamepad.wButtons:
             return True
+        if button == 'RIGHT_TRIGGER':
+            return self.is_trigger_pressed('RIGHT_TRIGGER')
         return False
 
     def is_thumb_move(self, thumb):
