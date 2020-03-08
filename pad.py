@@ -53,8 +53,7 @@ class Gamepad():
             return
         keyboard.press(action)
         self.is_button_pressed[button] = True
-        print('pressed')
-        threading.Timer(0.2, self.release_key, args=[button]).start()
+        threading.Timer(float(self.config['general']['MOUSE_CLICK_DELAY']), self.release_key, args=[button]).start()
 
     def press_mouse(self, button, action):
         if self.is_button_pressed[button]:
