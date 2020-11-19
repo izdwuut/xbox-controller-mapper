@@ -26,6 +26,17 @@ class Gamepad:
         'Y'
     ]
 
+    thumbs = [
+        'LEFT_THUMB_X',
+        'LEFT_THUMB_-X',
+        'LEFT_THUMB_Y',
+        'LEFT_THUMB_-Y',
+        'RIGHT_THUMB_X',
+        'RIGHT_THUMB_-X',
+        'RIGHT_THUMB_Y',
+        'RIGHT_THUMB_-Y'
+    ]
+
     is_button_pressed = {}
 
     mouse_click_events = {
@@ -85,7 +96,7 @@ class Gamepad:
             return True
 
     def handle_input(self, button):
-        if not button in self.is_button_pressed:
+        if button not in self.is_button_pressed:
             self.is_button_pressed[button] = False
         action = self.config['controls'][button]
         if not action:
@@ -102,8 +113,6 @@ class Gamepad:
         if self.is_key_press(button):
             self.press_key(button, action)
 
-
-
     # TODO: simplify condition
     def release_key(self, button):
         action = self.config['controls'][button]
@@ -111,86 +120,63 @@ class Gamepad:
             keyboard.release(action)
             self.is_button_pressed[button] = False
 
-    # def detect_thumb_move(self, thumb):
+    def handle_thumb(self, thumb):
+        if self.api.is_thumb_move(thumb):
+            self.handle_input(thumb)
 
-    # TODO: refactor
-    def handle_thumb_move(self):
-        if self.xinput.is_thumb_move('sThumbLX'):
-            if self.xinput.get_value('sThumbLX') > 0:
-                self.handle_input('LEFT_THUMB_X')
-            else:
-                self.handle_input('LEFT_THUMB_-X')
-        if self.xinput.is_thumb_move('sThumbLY'):
-            if self.xinput.get_value('sThumbLY') > 0:
-                self.handle_input('LEFT_THUMB_Y')
-            else:
-                self.handle_input('LEFT_THUMB_-Y')
-
-        if self.xinput.is_thumb_move('sThumbRX'):
-            if self.xinput.get_value('sThumbRX') > 0:
-                self.handle_input('RIGHT_THUMB_X')
-            else:
-                self.handle_input('RIGHT_THUMB_-X')
-        if self.xinput.is_thumb_move('sThumbRY'):
-            if self.xinput.get_value('sThumbRY') > 0:
-                self.handle_input('RIGHT_THUMB_Y')
-            else:
-                self.handle_input('RIGHT_THUMB_-Y')
+    def handle_thumbs(self):
+        for thumb in self.thumbs:
+            self.handle_thumb(thumb)
 
     def is_mouse_move(self, action):
         return action in self.mouse_move_events
 
-    def get_normalised_thumb_value(self, value):
-        return (float(value) / int(self.config['general']['THUMBS_MAGNITUDE'])) * float(
-            self.config['general']['SENSITIVITY'])
-
-    def get_normalised_trigger_value(self, value):
-        return (float(value & 0xff) / int(self.config['general']['TRIGGERS_MAGNITUDE'])) * 10 * float(
-            self.config['general']['SENSITIVITY'])
-
     # TODO: refactor
     def move_mouse(self, button, action):
         if button == 'LEFT_THUMB_X' or button == 'LEFT_THUMB_-X':
-            value = self.xinput.get_value('sThumbLX')
-            normalised_value = abs(self.get_normalised_thumb_value(value))
+            value = self.api.get_axis_value('LEFT_THUMB_X')
+            normalised_value = self.api.get_normalised_thumb_value(value)
         elif button == 'LEFT_THUMB_Y' or button == 'LEFT_THUMB_-Y':
-            value = self.xinput.get_value('sThumbLY')
-            normalised_value = abs(self.get_normalised_thumb_value(value))
+            value = self.api.get_axis_value('LEFT_THUMB_Y')
+            normalised_value = self.api.get_normalised_thumb_value(value)
         elif button == 'RIGHT_THUMB_X' or button == 'RIGHT_THUMB_-X':
-            value = self.xinput.get_value('sThumbRX')
-            normalised_value = abs(self.get_normalised_thumb_value(value))
+            value = self.api.get_axis_value('RIGHT_THUMB_X')
+            normalised_value = self.api.get_normalised_thumb_value(value)
         elif button == 'RIGHT_THUMB_Y' or button == 'RIGHT_THUMB_-Y':
-            value = self.xinput.get_value('sThumbRY')
-            normalised_value = abs(self.get_normalised_thumb_value(value))
+            value = self.api.get_axis_value('RIGHT_THUMB_Y')
+            normalised_value = self.api.get_normalised_thumb_value(value)
         elif button == 'LEFT_TRIGGER':
-            value = self.xinput.get_value('bLeftTrigger')
-            normalised_value = abs(self.get_normalised_trigger_value(value))
+            value = self.api.get_trigger_value('LEFT_TRIGGER')
+            normalised_value = abs(self.api.get_normalised_trigger_value(value))
         elif button == 'RIGHT_TRIGGER':
-            value = self.xinput.get_value('bRightTrigger')
-            normalised_value = abs(self.get_normalised_trigger_value(value))
+            value = self.api.get_trigger_value('RIGHT_TRIGGER')
+            normalised_value = abs(self.api.get_normalised_trigger_value(value))
         else:
             normalised_value = 1
 
         if action == 'MOUSE_MOVE_X':
-            mouse.move(ceil(normalised_value), 0, absolute=False)
+            self.mouse.move(ceil(normalised_value), 0)
         elif action == 'MOUSE_MOVE_-X':
-            mouse.move(floor(-normalised_value), 0, absolute=False)
+            self.mouse.move(floor(-normalised_value), 0)
         elif action == 'MOUSE_MOVE_Y':
-            mouse.move(0, floor(-normalised_value), absolute=False)
+            self.mouse.move(0, floor(normalised_value))
+        elif action == 'MOUSE_MOVE_-Y':
+            self.mouse.move(0, ceil(normalised_value))
         else:
-            mouse.move(0, ceil(normalised_value), absolute=False)
+            raise Exception('Invalid mouse axis.')
 
     def detect_button_press(self):
         for button in self.buttons:
-            if self.xinput.is_button_pressed(button):
+            if self.api.is_button_pressed(button):
                 self.handle_input(button)
             elif button in self.is_button_pressed and self.is_button_pressed[button]:
                 self.release_mouse(button)
                 self.release_key(button)
 
+    # TODO: refactor
     def detect_trigger_press(self):
         button = 'LEFT_TRIGGER'
-        if self.xinput.is_trigger_pressed('bLeftTrigger'):
+        if self.api.is_trigger_pressed(button):
             self.handle_input(button)
             self.is_button_pressed[button] = True
         elif button in self.is_button_pressed and self.is_button_pressed[button]:
@@ -198,7 +184,7 @@ class Gamepad:
             self.release_key('LEFT_TRIGGER')
 
         button = 'RIGHT_TRIGGER'
-        if self.xinput.is_trigger_pressed('bRightTrigger'):
+        if self.api.is_trigger_pressed(button):
             self.handle_input(button)
             self.is_button_pressed[button] = True
         elif button in self.is_button_pressed and self.is_button_pressed[button]:
@@ -207,13 +193,13 @@ class Gamepad:
 
     def run(self):
         self.detect_button_press()
-        self.handle_thumb_move()
+        self.handle_thumbs()
         self.detect_trigger_press()
 
     def __init__(self):
         self.config = ConfigParser()
         self.config.read(SETTINGS)
-        self.xinput = XInput()
+        self.api = XInput()
         self.mouse_scroll_events = {
             'MOUSE_SCROLL_DOWN': -float(self.config['general']['SCROLL_SPEED']),
             'MOUSE_SCROLL_UP': float(self.config['general']['SCROLL_SPEED'])
