@@ -1,5 +1,5 @@
-import mouse
-import keyboard
+from mouse import Mouse
+from keyboard import Keyboard
 from configparser import ConfigParser
 from time import sleep
 from xinput import XInput
@@ -52,7 +52,8 @@ class Gamepad:
         'MOUSE_MOVE_-Y': -1
     }
 
-    mouse = mouse.Mouse()
+    mouse = Mouse()
+    keyboard = Keyboard()
 
     # move to a Keyboard class
     def is_key_press(self, action):
@@ -66,7 +67,7 @@ class Gamepad:
     def press_key(self, button, action):
         if self.is_button_pressed[button]:
             return
-        keyboard.press(action)
+        self.keyboard.key_down(action)
         self.is_button_pressed[button] = True
         threading.Timer(float(self.config['general']['MOUSE_CLICK_DELAY']), self.release_key, args=[button]).start()
 
@@ -117,7 +118,7 @@ class Gamepad:
     def release_key(self, button):
         action = self.config['controls'][button]
         if action and self.is_key_press(action) and button in self.is_button_pressed and self.is_button_pressed[button]:
-            keyboard.release(action)
+            self.keyboard.key_up(action)
             self.is_button_pressed[button] = False
 
     def handle_thumb(self, thumb):

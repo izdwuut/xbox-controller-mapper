@@ -1,4 +1,4 @@
-
+import ctypes
 
 class Mouse:
     api = ctypes.windll.user32

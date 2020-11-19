@@ -1,8 +1,6 @@
 import ctypes
 import time
 
-SendInput = ctypes.windll.user32.SendInput
-
 ULONG_PTR = ctypes.POINTER(ctypes.c_ulong)
 
 
@@ -38,3 +36,6 @@ class Inputs(ctypes.Union):
 class Input(ctypes.Structure):
     _fields_ = [("type", ctypes.c_ulong),
                 ("inputs", Inputs)]
+
+
+
