@@ -1,4 +1,5 @@
-import mouse, keyboard
+import mouse
+import keyboard
 from configparser import ConfigParser
 from time import sleep
 from xinput import XInput
@@ -7,7 +8,8 @@ import threading
 
 SETTINGS = 'settings.ini'
 
-class Gamepad():
+
+class Gamepad:
     buttons = [
         'DPAD_UP',
         'DPAD_DOWN',
@@ -27,9 +29,9 @@ class Gamepad():
     is_button_pressed = {}
 
     mouse_click_events = {
-        'MOUSE_LEFT': 'left',
-        'MOUSE_RIGHT': 'right',
-        'MOUSE_MIDDLE': 'middle',
+        'MOUSE_LEFT': 'lmb',
+        'MOUSE_RIGHT': 'rmb',
+        'MOUSE_MIDDLE': 'mmb',
     }
 
     mouse_move_events = {
@@ -38,6 +40,8 @@ class Gamepad():
         'MOUSE_MOVE_-X': -1,
         'MOUSE_MOVE_-Y': -1
     }
+
+    mouse = mouse.Mouse()
 
     # move to a Keyboard class
     def is_key_press(self, action):
@@ -58,8 +62,17 @@ class Gamepad():
     def press_mouse(self, button, action):
         if self.is_button_pressed[button]:
             return
-        mouse.hold(button=self.mouse_click_events[action])
+        self.mouse.button_down(self.mouse_click_events[action])
         self.is_button_pressed[button] = True
+
+        # TODO: simplify condition
+    def release_mouse(self, button):
+        action = self.config['controls'][button]
+        if action and self.is_mouse_press(action) and button in self.is_button_pressed and self.is_button_pressed[
+            button]:
+            self.mouse.button_up(self.mouse_click_events[action])
+
+            self.is_button_pressed[button] = False
 
     def scroll_mouse(self, action):
         if action == 'MOUSE_SCROLL_DOWN':
@@ -89,12 +102,7 @@ class Gamepad():
         if self.is_key_press(button):
             self.press_key(button, action)
 
-    # TODO: simplify condition
-    def release_mouse(self, button):
-        action = self.config['controls'][button]
-        if action and self.is_mouse_press(action) and button in self.is_button_pressed and self.is_button_pressed[button]:
-            mouse.release(button=self.mouse_click_events[action])
-            self.is_button_pressed[button] = False
+
 
     # TODO: simplify condition
     def release_key(self, button):
@@ -103,9 +111,10 @@ class Gamepad():
             keyboard.release(action)
             self.is_button_pressed[button] = False
 
+    # def detect_thumb_move(self, thumb):
 
     # TODO: refactor
-    def detect_thumb_move(self):
+    def handle_thumb_move(self):
         if self.xinput.is_thumb_move('sThumbLX'):
             if self.xinput.get_value('sThumbLX') > 0:
                 self.handle_input('LEFT_THUMB_X')
@@ -196,10 +205,9 @@ class Gamepad():
             self.release_mouse('RIGHT_TRIGGER')
             self.release_key('RIGHT_TRIGGER')
 
-
     def run(self):
         self.detect_button_press()
-        self.detect_thumb_move()
+        self.handle_thumb_move()
         self.detect_trigger_press()
 
     def __init__(self):
@@ -212,6 +220,7 @@ class Gamepad():
         }
 
 
+# TODO: handle hot plug
 if __name__ == '__main__':
     gamepad = Gamepad()
     print('XBox Controller Mapper started. Press Ctrl+C to stop.')
