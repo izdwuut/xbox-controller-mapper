@@ -4,9 +4,7 @@ from configparser import ConfigParser
 from time import sleep
 from xinput import XInput
 from math import ceil, floor
-import threading
-
-SETTINGS = 'settings.ini'
+import os
 
 
 class Gamepad:
@@ -51,17 +49,41 @@ class Gamepad:
         'MOUSE_SCROLL_DOWN',
         'MOUSE_SCROLL_UP'
     }
+
     mouse = Mouse()
     keyboard = Keyboard()
 
-    def __init__(self):
+    def __init__(self, profile='default.ini'):
         self.config = ConfigParser()
-        self.config.read(SETTINGS)
-        self.api = XInput()
+        self.config.read(profile)
+        self.api = XInput(profile)
         self.mouse_scroll_events = {
             'MOUSE_SCROLL_DOWN': -float(self.config['general']['SCROLL_SPEED']),
             'MOUSE_SCROLL_UP': float(self.config['general']['SCROLL_SPEED'])
         }
+
+    @classmethod
+    def from_profile(cls):
+        profiles = [profile for profile in os.listdir('.') if profile.endswith('.ini')]
+        if len(profiles) == 1:
+            return cls(profiles[0])
+        print('Select profile:')
+        for i in range(len(profiles)):
+            print('{}. {}'.format(i, profiles[i]))
+        print()
+
+        while True:
+            choice = input('Select profile: ')
+            try:
+                index = int(choice)
+            except ValueError:
+                print('Invalid value.')
+                continue
+            if index < 0 or index > len(profiles) - 1:
+                print('Invalid value.')
+                continue
+            break
+        return cls(profiles[index])
 
     def run(self):
         self.detect_button_press()
@@ -158,7 +180,7 @@ class Gamepad:
         if action == 'MOUSE_MOVE_X':
             self.mouse.move(ceil(normalised_value), 0)
         elif action == 'MOUSE_MOVE_-X':
-            self.mouse.move(floor(-normalised_value), 0)
+            self.mouse.move(floor(normalised_value), 0)
         elif action == 'MOUSE_MOVE_Y':
             self.mouse.move(0, floor(normalised_value))
         elif action == 'MOUSE_MOVE_-Y':
@@ -189,7 +211,7 @@ class Gamepad:
 
 # TODO: handle hot plug (print a msg)
 if __name__ == '__main__':
-    gamepad = Gamepad()
+    gamepad = Gamepad.from_profile()
     print('XBox Controller Mapper started. Press Ctrl+C to stop.')
     while True:
         gamepad.run()

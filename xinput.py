@@ -42,12 +42,28 @@ class XInput:
         'RIGHT_THUMB_Y': 'sThumbRY',
         'RIGHT_THUMB_-Y': 'sThumbRY',
     }
+    GAMEPAD_CODES = {
+        'XINPUT_GAMEPAD_DPAD_UP': 0x0001,
+        'XINPUT_GAMEPAD_DPAD_DOWN': 0x0002,
+        'XINPUT_GAMEPAD_DPAD_LEFT': 0x0004,
+        'XINPUT_GAMEPAD_DPAD_RIGHT': 0x0008,
+        'XINPUT_GAMEPAD_START': 0x0010,
+        'XINPUT_GAMEPAD_BACK': 0x0020,
+        'XINPUT_GAMEPAD_LEFT_THUMB': 0x0040,
+        'XINPUT_GAMEPAD_RIGHT_THUMB': 0x0080,
+        'XINPUT_GAMEPAD_LEFT_SHOULDER': 0x0100,
+        'XINPUT_GAMEPAD_RIGHT_SHOULDER': 0x0200,
+        'XINPUT_GAMEPAD_A': 0x1000,
+        'XINPUT_GAMEPAD_B': 0x2000,
+        'XINPUT_GAMEPAD_X': 0x4000,
+        'XINPUT_GAMEPAD_Y': 0x8000
+    }
 
-    def __init__(self):
+    def __init__(self, profile):
         self.state = XINPUT_STATE()
         self.gamepad = self.state.Gamepad
         self.config = ConfigParser()
-        self.config.read('settings.ini')
+        self.config.read(profile)
 
     def set_vibration(self, left_motor, right_motor):
         vibration = XINPUT_VIBRATION()
@@ -57,24 +73,20 @@ class XInput:
 
     def is_button_press(self, button):
         self.get_state()
-        if int(self.config['gamepad']['XINPUT_GAMEPAD_' + button], base=16) & self.gamepad.wButtons:
+        if self.GAMEPAD_CODES['XINPUT_GAMEPAD_' + button] & self.gamepad.wButtons:
             return True
         if 'TRIGGER' in button:
             return self.is_trigger_pressed(button)
         return False
 
     def is_thumb_move(self, thumb):
-        position = abs(getattr(self.gamepad, self.axes_mapping[thumb]))
+        position = getattr(self.gamepad, self.axes_mapping[thumb])
         if '-' in thumb:
-            position = -position # wwdwdwwdwwdwddwdwdwdwdwdwdwdddwdwdw
-        if position > self.get_thumbs_dead_zone():
-            return True
-        return False
+            return -position > self.get_thumbs_dead_zone()
+        return position > self.get_thumbs_dead_zone()
 
     def is_trigger_pressed(self, trigger):
-        if self.get_trigger_value(trigger) > self.get_triggers_dead_zone():
-            return True
-        return False
+        return self.get_trigger_value(trigger) > self.get_triggers_dead_zone()
 
     def get_trigger_value(self, trigger):
         return getattr(self.gamepad, self.axes_mapping[trigger]) & self.config['general'].getint('TRIGGERS_MAGNITUDE')
@@ -99,4 +111,3 @@ class XInput:
 
     def get_state(self):
         self.api.XInputGetState(ctypes.wintypes.WORD(0), ctypes.pointer(self.state))
-
