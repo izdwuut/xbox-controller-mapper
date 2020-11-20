@@ -1,5 +1,7 @@
 import ctypes
 
+
+# TODO: use input module
 class Mouse:
     api = ctypes.windll.user32
 

@@ -1,5 +1,4 @@
 import ctypes
-import time
 
 ULONG_PTR = ctypes.POINTER(ctypes.c_ulong)
 

@@ -55,7 +55,7 @@ class XInput:
         vibration.wRightMotorSpeed = right_motor
         self.api.XInputSetState(0, ctypes.byref(vibration))
 
-    def is_button_pressed(self, button):
+    def is_button_press(self, button):
         self.get_state()
         if int(self.config['gamepad']['XINPUT_GAMEPAD_' + button], base=16) & self.gamepad.wButtons:
             return True
@@ -66,7 +66,7 @@ class XInput:
     def is_thumb_move(self, thumb):
         position = abs(getattr(self.gamepad, self.axes_mapping[thumb]))
         if '-' in thumb:
-            position = -position
+            position = -position # wwdwdwwdwwdwddwdwdwdwdwdwdwdddwdwdw
         if position > self.get_thumbs_dead_zone():
             return True
         return False

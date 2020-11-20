@@ -1,0 +1,196 @@
+from mouse import Mouse
+from keyboard import Keyboard
+from configparser import ConfigParser
+from time import sleep
+from xinput import XInput
+from math import ceil, floor
+import threading
+
+SETTINGS = 'settings.ini'
+
+
+class Gamepad:
+    buttons = [
+        'DPAD_UP',
+        'DPAD_DOWN',
+        'DPAD_LEFT',
+        'DPAD_RIGHT',
+        'START',
+        'LEFT_THUMB',
+        'RIGHT_THUMB',
+        'LEFT_SHOULDER',
+        'RIGHT_SHOULDER',
+        'A',
+        'B',
+        'X',
+        'Y'
+    ]
+    thumbs = [
+        'LEFT_THUMB_X',
+        'LEFT_THUMB_-X',
+        'LEFT_THUMB_Y',
+        'LEFT_THUMB_-Y',
+        'RIGHT_THUMB_X',
+        'RIGHT_THUMB_-X',
+        'RIGHT_THUMB_Y',
+        'RIGHT_THUMB_-Y'
+    ]
+    _is_pressed = {}
+    mouse_click_events = {
+        'MOUSE_LEFT': 'lmb',
+        'MOUSE_RIGHT': 'rmb',
+        'MOUSE_MIDDLE': 'mmb',
+    }
+    mouse_move_events = {
+        'MOUSE_MOVE_X': 1,
+        'MOUSE_MOVE_Y': 1,
+        'MOUSE_MOVE_-X': -1,
+        'MOUSE_MOVE_-Y': -1
+    }
+    mouse_scroll_events = {
+        'MOUSE_SCROLL_DOWN',
+        'MOUSE_SCROLL_UP'
+    }
+    mouse = Mouse()
+    keyboard = Keyboard()
+
+    def __init__(self):
+        self.config = ConfigParser()
+        self.config.read(SETTINGS)
+        self.api = XInput()
+        self.mouse_scroll_events = {
+            'MOUSE_SCROLL_DOWN': -float(self.config['general']['SCROLL_SPEED']),
+            'MOUSE_SCROLL_UP': float(self.config['general']['SCROLL_SPEED'])
+        }
+
+    def run(self):
+        self.detect_button_press()
+        self.handle_thumbs()
+        self.handle_triggers_press()
+
+    def is_key_press(self, action):
+        return not self.is_mouse_press(action)
+
+    def is_mouse_press(self, button):
+        if button.upper() in self.mouse_click_events:
+            return True
+        return False
+
+    def press_key(self, button, action):
+        if self._is_pressed[button]:
+            return
+        self.keyboard.key_down(action)
+        self._is_pressed[button] = True
+
+    def press_mouse(self, button, action):
+        if self._is_pressed[button]:
+            return
+        self.mouse.button_down(self.mouse_click_events[action])
+        self._is_pressed[button] = True
+
+    def release_mouse(self, button):
+        action = self.config['controls'][button]
+        if action and self.is_mouse_press(action) and self.is_pressed(button):
+            self.mouse.button_up(self.mouse_click_events[action])
+            self._is_pressed[button] = False
+
+    # TODO: handle scroll
+    def scroll_mouse(self, action):
+        # if action == 'MOUSE_SCROLL_DOWN':
+        #     mouse.wheel(self.mouse_scroll_events['MOUSE_SCROLL_DOWN'])
+        # if action == 'MOUSE_SCROLL_UP':
+        #     mouse.wheel(self.mouse_scroll_events['MOUSE_SCROLL_UP'])
+        pass
+
+    def is_mouse_scroll(self, action):
+        if action in self.mouse_scroll_events:
+            return True
+
+    def handle_input(self, button):
+        if button not in self._is_pressed:
+            self._is_pressed[button] = False
+        action = self.config['controls'][button]
+        if not action:
+            return
+        if self.is_mouse_press(action):
+            self.press_mouse(button, action)
+            return
+        if self.is_mouse_move(action):
+            self.move_mouse(button, action)
+            return
+        if self.is_key_press(button):
+            self.press_key(button, action)
+        if self.is_mouse_scroll(action):
+            self.scroll_mouse(action)
+            return
+
+    def release_key(self, button):
+        action = self.config['controls'][button]
+        if action and self.is_key_press(action) and self.is_pressed(button):
+            self.keyboard.key_up(action)
+            self._is_pressed[button] = False
+
+    def handle_thumb(self, thumb):
+        if self.api.is_thumb_move(thumb):
+            self.handle_input(thumb)
+        elif self.is_pressed(thumb):
+            self.release_mouse(thumb)
+            self.release_key(thumb)
+
+    def is_pressed(self, button):
+        return button in self._is_pressed and self._is_pressed[button]
+
+    def handle_thumbs(self):
+        for thumb in self.thumbs:
+            self.handle_thumb(thumb)
+
+    def is_mouse_move(self, action):
+        return action in self.mouse_move_events
+
+    def move_mouse(self, button, action):
+        if 'THUMB' in button:
+            normalised_value = self.api.get_normalised_thumb_value(self.api.get_axis_value(button))
+        elif 'TRIGGER' in button:
+            normalised_value = abs(self.api.get_normalised_trigger_value(self.api.get_trigger_value(button)))
+        else:
+            normalised_value = 1
+
+        if action == 'MOUSE_MOVE_X':
+            self.mouse.move(ceil(normalised_value), 0)
+        elif action == 'MOUSE_MOVE_-X':
+            self.mouse.move(floor(-normalised_value), 0)
+        elif action == 'MOUSE_MOVE_Y':
+            self.mouse.move(0, floor(normalised_value))
+        elif action == 'MOUSE_MOVE_-Y':
+            self.mouse.move(0, ceil(normalised_value))
+        else:
+            raise Exception('Invalid mouse axis.')
+
+    def detect_button_press(self):
+        for button in self.buttons:
+            if self.api.is_button_press(button):
+                self.handle_input(button)
+            elif self.is_pressed(button):
+                self.release_mouse(button)
+                self.release_key(button)
+
+    def handle_trigger_press(self, trigger='LEFT_TRIGGER'):
+        if self.api.is_trigger_pressed(trigger):
+            self.handle_input(trigger)
+            self._is_pressed[trigger] = True
+        elif self.is_pressed(trigger):
+            self.release_mouse(trigger)
+            self.release_key(trigger)
+
+    def handle_triggers_press(self):
+        self.handle_trigger_press()
+        self.handle_trigger_press('RIGHT_TRIGGER')
+
+
+# TODO: handle hot plug (print a msg)
+if __name__ == '__main__':
+    gamepad = Gamepad()
+    print('XBox Controller Mapper started. Press Ctrl+C to stop.')
+    while True:
+        gamepad.run()
+        sleep(float(gamepad.config['general']['DELAY']))
