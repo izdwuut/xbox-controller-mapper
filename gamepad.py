@@ -5,6 +5,7 @@ from time import sleep
 from xinput import XInput
 from math import ceil, floor
 import os
+import sys
 
 
 class Gamepad:
@@ -54,8 +55,10 @@ class Gamepad:
     keyboard = Keyboard()
 
     def __init__(self, profile='default.ini'):
-        self.config = ConfigParser()
-        self.config.read(profile)
+        config = ConfigParser()
+
+        config.read(profile)
+        self.config = config
         self.api = XInput(profile)
         self.mouse_scroll_events = {
             'MOUSE_SCROLL_DOWN': -float(self.config['general']['SCROLL_SPEED']),
@@ -72,6 +75,7 @@ class Gamepad:
             print('{}. {}'.format(i, profiles[i]))
         print()
 
+        index = 0
         while True:
             choice = input('Select profile: ')
             try:
@@ -83,7 +87,22 @@ class Gamepad:
                 print('Invalid value.')
                 continue
             break
+        cls.validate_profile(profiles[index])
         return cls(profiles[index])
+
+    @classmethod
+    def validate_profile(cls, profile):
+        config = ConfigParser()
+        config.read(profile)
+        if 'general' not in config:
+            print('No "general" section in loaded profile.')
+            sys.exit()
+        for option in config['general']:
+            try:
+                int(config['general'][option])
+            except ValueError:
+                print('Invalid "{}" option value.'.format(option))
+                sys.exit()
 
     def run(self):
         self.detect_button_press()

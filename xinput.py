@@ -107,10 +107,14 @@ class XInput:
         return (value / magnitude) * sensitivity
 
     def get_thumbs_dead_zone(self):
-        return float(self.config['general']['THUMBS_DEAD_ZONE']) * int(self.config['general']['THUMBS_MAGNITUDE'])
+        dead_zone = self.config['general'].getfloat('THUMBS_DEAD_ZONE')
+        magnitude = self.config['general'].getint('THUMBS_MAGNITUDE')
+        return dead_zone * magnitude
 
     def get_triggers_dead_zone(self):
-        return float(self.config['general']['TRIGGERS_DEAD_ZONE']) * int(self.config['general']['TRIGGERS_MAGNITUDE'])
+        dead_zone = self.config['general'].getfloat('TRIGGERS_DEAD_ZONE')
+        magnitude = self.config['general'].getint(['TRIGGERS_MAGNITUDE'])
+        return dead_zone * magnitude
 
     def get_state(self):
         self.api.XInputGetState(ctypes.wintypes.WORD(0), ctypes.pointer(self.state))
