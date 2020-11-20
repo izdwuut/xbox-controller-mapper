@@ -89,6 +89,8 @@ class Keyboard:
     }
 
     def key_down(self, key):
+        if key.upper() not in self.SCAN_CODES:
+            raise Exception('Invalid key')
         inputs = Inputs()
         inputs.ki = KeyboardInput(0, self.SCAN_CODES[key.upper()], 0x0008, 0, ctypes.pointer(ctypes.c_ulong(0)))
         input = Input(ctypes.c_ulong(1), inputs)

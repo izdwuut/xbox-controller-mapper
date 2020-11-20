@@ -171,9 +171,9 @@ class Gamepad:
 
     def move_mouse(self, button, action):
         if 'THUMB' in button:
-            normalised_value = self.api.get_normalised_thumb_value(self.api.get_axis_value(button))
+            normalised_value = self.api.get_normalised_thumb_value(button)
         elif 'TRIGGER' in button:
-            normalised_value = abs(self.api.get_normalised_trigger_value(self.api.get_trigger_value(button)))
+            normalised_value = abs(self.api.get_normalised_trigger_value(button))
         else:
             normalised_value = 1
 
@@ -209,6 +209,7 @@ class Gamepad:
         self.handle_trigger_press('RIGHT_TRIGGER')
 
 
+# TODO: validate profile at startup
 # TODO: handle hot plug (print a msg)
 if __name__ == '__main__':
     gamepad = Gamepad.from_profile()

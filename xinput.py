@@ -30,7 +30,7 @@ class XINPUT_VIBRATION(ctypes.Structure):
 
 class XInput:
     api = ctypes.windll.xinput1_4
-    axes_mapping = {
+    AXES_MAPPING = {
         'LEFT_TRIGGER': 'bLeftTrigger',
         'RIGHT_TRIGGER': 'bRightTrigger',
         'LEFT_THUMB_X': 'sThumbLX',
@@ -80,7 +80,7 @@ class XInput:
         return False
 
     def is_thumb_move(self, thumb):
-        position = getattr(self.gamepad, self.axes_mapping[thumb])
+        position = getattr(self.gamepad, self.AXES_MAPPING[thumb])
         if '-' in thumb:
             return -position > self.get_thumbs_dead_zone()
         return position > self.get_thumbs_dead_zone()
@@ -89,19 +89,22 @@ class XInput:
         return self.get_trigger_value(trigger) > self.get_triggers_dead_zone()
 
     def get_trigger_value(self, trigger):
-        return getattr(self.gamepad, self.axes_mapping[trigger]) & self.config['general'].getint('TRIGGERS_MAGNITUDE')
+        return getattr(self.gamepad, self.AXES_MAPPING[trigger]) & self.config['general'].getint('TRIGGERS_MAGNITUDE')
 
     def get_axis_value(self, item):
-        return getattr(self.gamepad, self.axes_mapping[item])
+        return getattr(self.gamepad, self.AXES_MAPPING[item])
 
-    def get_normalised_thumb_value(self, value):
-        return (float(value) / int(self.config['general']['THUMBS_MAGNITUDE'])) * float(
-            self.config['general']['SENSITIVITY'])
+    def get_normalised_thumb_value(self, thumb):
+        value = float(self.get_axis_value(thumb))
+        magnitude = int(self.config['general']['THUMBS_MAGNITUDE'])
+        sensitivity = float(self.config['general']['SENSITIVITY'])
+        return (value / magnitude) * sensitivity
 
-    # TODO: change API: take triger as argument (merge with get_trigger_value)
-    def get_normalised_trigger_value(self, value):
-        return (float(value & 0xff) / int(self.config['general']['TRIGGERS_MAGNITUDE'])) * 10 * float(
-            self.config['general']['SENSITIVITY'])
+    def get_normalised_trigger_value(self, trigger):
+        value = float(self.get_trigger_value(trigger) & 0xff)
+        magnitude = int(self.config['general']['TRIGGERS_MAGNITUDE'])
+        sensitivity = float(self.config['general']['SENSITIVITY'])
+        return (value / magnitude) * sensitivity
 
     def get_thumbs_dead_zone(self):
         return float(self.config['general']['THUMBS_DEAD_ZONE']) * int(self.config['general']['THUMBS_MAGNITUDE'])
