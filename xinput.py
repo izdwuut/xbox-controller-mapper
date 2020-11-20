@@ -113,7 +113,7 @@ class XInput:
 
     def get_triggers_dead_zone(self):
         dead_zone = self.config['general'].getfloat('TRIGGERS_DEAD_ZONE')
-        magnitude = self.config['general'].getint(['TRIGGERS_MAGNITUDE'])
+        magnitude = self.config['general'].getint('TRIGGERS_MAGNITUDE')
         return dead_zone * magnitude
 
     def get_state(self):

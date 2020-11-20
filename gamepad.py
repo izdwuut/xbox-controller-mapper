@@ -35,11 +35,11 @@ class Gamepad:
         'RIGHT_THUMB_-Y'
     ]
     _is_pressed = {}
-    mouse_click_events = {
-        'MOUSE_LEFT': 'lmb',
-        'MOUSE_RIGHT': 'rmb',
-        'MOUSE_MIDDLE': 'mmb',
-    }
+    mouse_click_events = [
+        'MOUSE_LEFT',
+        'MOUSE_MIDDLE',
+        'MOUSE_RIGHT',
+    ]
     mouse_move_events = {
         'MOUSE_MOVE_X': 1,
         'MOUSE_MOVE_Y': 1,
@@ -65,6 +65,7 @@ class Gamepad:
             'MOUSE_SCROLL_UP': float(self.config['general']['SCROLL_SPEED'])
         }
 
+    # TODO: method doesn't work
     @classmethod
     def from_profile(cls):
         profiles = [profile for profile in os.listdir('.') if profile.endswith('.ini')]
@@ -126,13 +127,13 @@ class Gamepad:
     def press_mouse(self, button, action):
         if self._is_pressed[button]:
             return
-        self.mouse.button_down(self.mouse_click_events[action])
+        self.mouse.button_down(action)
         self._is_pressed[button] = True
 
     def release_mouse(self, button):
         action = self.config['controls'][button]
         if action and self.is_mouse_press(action) and self.is_pressed(button):
-            self.mouse.button_up(self.mouse_click_events[action])
+            self.mouse.button_up(action)
             self._is_pressed[button] = False
 
     # TODO: handle scroll
