@@ -36,7 +36,6 @@ class Gamepad:
     ]
     _is_pressed = {}
 
-    mouse = Mouse()
     keyboard = Keyboard()
 
     def __init__(self, profile='default.ini'):
@@ -45,10 +44,7 @@ class Gamepad:
         config.read(profile)
         self.config = config
         self.api = XInput(config['general'])
-        self.mouse_scroll_events = {
-            'MOUSE_SCROLL_DOWN': -float(self.config['general']['SCROLL_SPEED']),
-            'MOUSE_SCROLL_UP': float(self.config['general']['SCROLL_SPEED'])
-        }
+        self.mouse = Mouse(config['general'])
 
     @classmethod
     def from_profile(cls):
@@ -103,7 +99,7 @@ class Gamepad:
         self.handle_triggers_press()
 
     def is_key_press(self, action):
-        mouse_events = [*self.mouse.move_events.keys(), *self.mouse_scroll_events, *self.mouse.click_events]
+        mouse_events = [*self.mouse.move_events, *self.mouse.scroll_events, *self.mouse.click_events]
         return action not in mouse_events
 
     def is_mouse_press(self, button):
@@ -135,8 +131,9 @@ class Gamepad:
         if action == 'MOUSE_SCROLL_DOWN':
             self.mouse.scroll('MOUSE_SCROLL_DOWN')
 
+    # TODO: move to mouse class
     def is_mouse_scroll(self, action):
-        if action in self.mouse_scroll_events:
+        if action in self.mouse.scroll_events:
             return True
 
     def handle_input(self, button):
@@ -227,4 +224,4 @@ if __name__ == '__main__':
     print('XBox Controller Mapper has started. Press Ctrl+C to stop.')
     while True:
         gamepad.run()
-        sleep(float(gamepad.config['general']['DELAY']))
+        sleep(gamepad.config['general'].getfloat('DELAY'))
