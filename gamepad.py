@@ -40,7 +40,6 @@ class Gamepad:
 
     def __init__(self, profile='default.ini'):
         config = ConfigParser()
-
         config.read(profile)
         self.config = config
         self.api = XInput(config['general'])
@@ -92,7 +91,6 @@ class Gamepad:
                 sys.exit()
         print('Profile OK!')
 
-    # TODO: unify methods name (they should start with handle_)
     def run(self):
         self.detect_button_press()
         self.handle_thumbs()
@@ -107,31 +105,30 @@ class Gamepad:
             return True
         return False
 
-    def press_key(self, button, action):
+    def handle_press_key(self, button, action):
         if self._is_pressed[button]:
             return
         self.keyboard.key_down(action)
         self._is_pressed[button] = True
 
-    def press_mouse(self, button, action):
+    def handle_press_mouse(self, button, action):
         if self._is_pressed[button]:
             return
         self.mouse.button_down(action)
         self._is_pressed[button] = True
 
-    def release_mouse(self, button):
+    def handle_release_mouse(self, button):
         action = self.config['controls'][button]
         if action and self.is_mouse_press(action) and self.is_pressed(button):
             self.mouse.button_up(action)
             self._is_pressed[button] = False
 
-    def scroll_mouse(self, action):
+    def handle_mouse_scroll(self, action):
         if action == 'MOUSE_SCROLL_UP':
             self.mouse.scroll('MOUSE_SCROLL_UP')
         if action == 'MOUSE_SCROLL_DOWN':
             self.mouse.scroll('MOUSE_SCROLL_DOWN')
 
-    # TODO: move to mouse class
     def is_mouse_scroll(self, action):
         if action in self.mouse.scroll_events:
             return True
@@ -143,18 +140,18 @@ class Gamepad:
         if not action:
             return
         if self.is_mouse_press(action):
-            self.press_mouse(button, action)
+            self.handle_press_mouse(button, action)
             return
         if self.is_mouse_move(action):
-            self.move_mouse(button, action)
+            self.handle_move_mouse(button, action)
             return
         if self.is_mouse_scroll(action):
-            self.scroll_mouse(action)
+            self.handle_mouse_scroll(action)
             return
         if self.is_key_press(button):
-            self.press_key(button, action)
+            self.handle_press_key(button, action)
 
-    def release_key(self, button):
+    def handle_release_key(self, button):
         action = self.config['controls'][button]
         if action and self.is_key_press(action) and self.is_pressed(button):
             self.keyboard.key_up(action)
@@ -164,8 +161,8 @@ class Gamepad:
         if self.api.is_thumb_move(thumb):
             self.handle_input(thumb)
         elif self.is_pressed(thumb):
-            self.release_mouse(thumb)
-            self.release_key(thumb)
+            self.handle_release_mouse(thumb)
+            self.handle_release_key(thumb)
 
     def is_pressed(self, button):
         return button in self._is_pressed and self._is_pressed[button]
@@ -177,7 +174,8 @@ class Gamepad:
     def is_mouse_move(self, action):
         return action in self.mouse.move_events
 
-    def move_mouse(self, button, action):
+    # TODO: remove hardcoded values
+    def handle_move_mouse(self, button, action):
         if 'THUMB' in button:
             normalised_value = self.api.get_normalised_thumb_value(button)
         elif 'TRIGGER' in button:
@@ -201,16 +199,16 @@ class Gamepad:
             if self.api.is_button_press(button):
                 self.handle_input(button)
             elif self.is_pressed(button):
-                self.release_mouse(button)
-                self.release_key(button)
+                self.handle_release_mouse(button)
+                self.handle_release_key(button)
 
     def handle_trigger_press(self, trigger='LEFT_TRIGGER'):
         if self.api.is_trigger_pressed(trigger):
             self.handle_input(trigger)
             self._is_pressed[trigger] = True
         elif self.is_pressed(trigger):
-            self.release_mouse(trigger)
-            self.release_key(trigger)
+            self.handle_release_mouse(trigger)
+            self.handle_release_key(trigger)
 
     def handle_triggers_press(self):
         self.handle_trigger_press()
