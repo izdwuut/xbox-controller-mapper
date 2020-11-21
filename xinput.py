@@ -86,10 +86,11 @@ class XInput:
         return position > self.get_thumbs_dead_zone()
 
     def is_trigger_pressed(self, trigger):
-        return self.get_trigger_value(trigger) > self.get_triggers_dead_zone()
+
+        return abs(self.get_trigger_value(trigger)) > self.get_triggers_dead_zone()
 
     def get_trigger_value(self, trigger):
-        return getattr(self.gamepad, self.AXES_MAPPING[trigger]) & self.config['general'].getint('TRIGGERS_MAGNITUDE')
+        return getattr(self.gamepad, self.AXES_MAPPING[trigger]) & 0xFF
 
     def get_axis_value(self, item):
         return getattr(self.gamepad, self.AXES_MAPPING[item])
@@ -101,7 +102,7 @@ class XInput:
         return (value / magnitude) * sensitivity
 
     def get_normalised_trigger_value(self, trigger):
-        value = float(self.get_trigger_value(trigger) & 0xff)
+        value = float(self.get_trigger_value(trigger))
         magnitude = int(self.config['general']['TRIGGERS_MAGNITUDE'])
         sensitivity = float(self.config['general']['SENSITIVITY'])
         return (value / magnitude) * sensitivity

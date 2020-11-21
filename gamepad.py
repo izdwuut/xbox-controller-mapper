@@ -71,10 +71,9 @@ class Gamepad:
         if len(profiles) == 1:
             cls.validate_profile(profiles[0])
             return cls(profiles[0])
-        print('Select profile:')
+        print('Profiles:')
         for i in range(len(profiles)):
             print('{}. {}'.format(i, profiles[i]))
-        print()
 
         index = None
         while True:
@@ -112,13 +111,15 @@ class Gamepad:
                 sys.exit()
         print('Profile OK!')
 
+    # TODO: unify methods name (they should start with handle_)
     def run(self):
         self.detect_button_press()
         self.handle_thumbs()
         self.handle_triggers_press()
 
     def is_key_press(self, action):
-        return not self.is_mouse_press(action)
+        mouse_events = [*self.mouse_move_events.keys(), *self.mouse_scroll_events, *self.mouse_click_events]
+        return action not in mouse_events
 
     def is_mouse_press(self, button):
         if button.upper() in self.mouse_click_events:
