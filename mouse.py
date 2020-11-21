@@ -7,6 +7,22 @@ from input import MouseInput, Inputs, Input
 class Mouse:
     api = ctypes.windll.user32
 
+    click_events = [
+        'MOUSE_LEFT',
+        'MOUSE_MIDDLE',
+        'MOUSE_RIGHT',
+    ]
+    move_events = {
+        'MOUSE_MOVE_X': 1,
+        'MOUSE_MOVE_Y': 1,
+        'MOUSE_MOVE_-X': -1,
+        'MOUSE_MOVE_-Y': -1
+    }
+    scroll_events = {
+        'MOUSE_SCROLL_DOWN',
+        'MOUSE_SCROLL_UP'
+    }
+
     def move(self, x, y):
         inputs = Inputs()
         inputs.mi = MouseInput(

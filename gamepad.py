@@ -35,21 +35,6 @@ class Gamepad:
         'RIGHT_THUMB_-Y'
     ]
     _is_pressed = {}
-    mouse_click_events = [
-        'MOUSE_LEFT',
-        'MOUSE_MIDDLE',
-        'MOUSE_RIGHT',
-    ]
-    mouse_move_events = {
-        'MOUSE_MOVE_X': 1,
-        'MOUSE_MOVE_Y': 1,
-        'MOUSE_MOVE_-X': -1,
-        'MOUSE_MOVE_-Y': -1
-    }
-    mouse_scroll_events = {
-        'MOUSE_SCROLL_DOWN',
-        'MOUSE_SCROLL_UP'
-    }
 
     mouse = Mouse()
     keyboard = Keyboard()
@@ -118,11 +103,11 @@ class Gamepad:
         self.handle_triggers_press()
 
     def is_key_press(self, action):
-        mouse_events = [*self.mouse_move_events.keys(), *self.mouse_scroll_events, *self.mouse_click_events]
+        mouse_events = [*self.mouse.move_events.keys(), *self.mouse_scroll_events, *self.mouse.click_events]
         return action not in mouse_events
 
     def is_mouse_press(self, button):
-        if button.upper() in self.mouse_click_events:
+        if button.upper() in self.mouse.click_events:
             return True
         return False
 
@@ -195,7 +180,7 @@ class Gamepad:
             self.handle_thumb(thumb)
 
     def is_mouse_move(self, action):
-        return action in self.mouse_move_events
+        return action in self.mouse.move_events
 
     def move_mouse(self, button, action):
         if 'THUMB' in button:
