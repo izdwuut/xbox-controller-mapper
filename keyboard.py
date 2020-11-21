@@ -1,11 +1,11 @@
 import ctypes
 from input import KeyboardInput, Inputs, Input
 
-KEYEVENTF_SCANCODE = 0x008
-
 
 class Keyboard:
     api = SendInput = ctypes.windll.user32
+
+    KEYEVENTF_SCANCODE = 0x008
     SCAN_CODES = {
         'ESCAPE': 0x01,
         '1': 0x02,
@@ -88,16 +88,20 @@ class Keyboard:
         'WINDOWS': 0xDB
     }
 
-    def key_down(self, key):
-        if key.upper() not in self.SCAN_CODES:
+    @classmethod
+    def key_down(cls, key):
+        if key.upper() not in cls.SCAN_CODES:
             raise Exception('Invalid key')
         inputs = Inputs()
-        inputs.ki = KeyboardInput(0, self.SCAN_CODES[key.upper()], 0x0008, 0, ctypes.pointer(ctypes.c_ulong(0)))
-        input = Input(ctypes.c_ulong(1), inputs)
-        self.api.SendInput(1, ctypes.pointer(input), ctypes.sizeof(input))
+        inputs.ki = KeyboardInput(0, cls.SCAN_CODES[key.upper()], cls.KEYEVENTF_SCANCODE, 0, ctypes.pointer(ctypes.c_ulong(0)))
+        input_ = Input(ctypes.c_ulong(1), inputs)
+        cls.api.SendInput(1, ctypes.pointer(input_), ctypes.sizeof(input_))
 
-    def key_up(self, key):
+    @classmethod
+    def key_up(cls, key):
+        if key.upper() not in cls.SCAN_CODES:
+            raise Exception('Invalid key')
         inputs = Inputs()
-        inputs.ki = KeyboardInput(0, self.SCAN_CODES[key.upper()], 0x0008 | 0x0002, 0, ctypes.pointer(ctypes.c_ulong(0)))
-        input = Input(ctypes.c_ulong(1), inputs)
-        self.api.SendInput(1, ctypes.pointer(input), ctypes.sizeof(input))
+        inputs.ki = KeyboardInput(0, cls.SCAN_CODES[key.upper()], cls.KEYEVENTF_SCANCODE | 0x0002, 0, ctypes.pointer(ctypes.c_ulong(0)))
+        input_ = Input(ctypes.c_ulong(1), inputs)
+        cls.api.SendInput(1, ctypes.pointer(input_), ctypes.sizeof(input_))
