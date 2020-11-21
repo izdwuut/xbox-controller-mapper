@@ -1,5 +1,5 @@
-import ctypes, ctypes.wintypes
-from configparser import ConfigParser
+import ctypes
+import ctypes.wintypes
 
 
 class XINPUT_GAMEPAD(ctypes.Structure):
@@ -59,17 +59,10 @@ class XInput:
         'XINPUT_GAMEPAD_Y': 0x8000
     }
 
-    def __init__(self, profile):
+    def __init__(self, config):
         self.state = XINPUT_STATE()
         self.gamepad = self.state.Gamepad
-        self.config = ConfigParser()
-        self.config.read(profile)
-
-    def set_vibration(self, left_motor, right_motor):
-        vibration = XINPUT_VIBRATION()
-        vibration.wLeftMotorSpeed = left_motor
-        vibration.wRightMotorSpeed = right_motor
-        self.api.XInputSetState(0, ctypes.byref(vibration))
+        self.config = config
 
     def is_button_press(self, button):
         self.get_state()
@@ -86,36 +79,47 @@ class XInput:
         return position > self.get_thumbs_dead_zone()
 
     def is_trigger_pressed(self, trigger):
-
         return abs(self.get_trigger_value(trigger)) > self.get_triggers_dead_zone()
 
     def get_trigger_value(self, trigger):
-        return getattr(self.gamepad, self.AXES_MAPPING[trigger]) & 0xFF
+        return float(getattr(self.gamepad, self.AXES_MAPPING[trigger]) & 0xFF)
 
     def get_axis_value(self, item):
-        return getattr(self.gamepad, self.AXES_MAPPING[item])
+        return float(getattr(self.gamepad, self.AXES_MAPPING[item]))
+
+    @classmethod
+    def get_normalised_value(cls, raw_value, magnitude, sensitivity):
+        return (raw_value / magnitude) * sensitivity
 
     def get_normalised_thumb_value(self, thumb):
-        value = float(self.get_axis_value(thumb))
-        magnitude = int(self.config['general']['THUMBS_MAGNITUDE'])
-        sensitivity = float(self.config['general']['SENSITIVITY'])
-        return (value / magnitude) * sensitivity
+        return self.get_normalised_value(
+            self.get_axis_value(thumb),
+            self.config.getint('THUMBS_MAGNITUDE'),
+            self.config.getfloat('SENSITIVITY')
+        )
 
     def get_normalised_trigger_value(self, trigger):
-        value = float(self.get_trigger_value(trigger))
-        magnitude = int(self.config['general']['TRIGGERS_MAGNITUDE'])
-        sensitivity = float(self.config['general']['SENSITIVITY'])
-        return (value / magnitude) * sensitivity
+        return self.get_normalised_value(
+            self.get_trigger_value(trigger),
+            self.config.getint('TRIGGERS_MAGNITUDE'),
+            self.config.getfloat('SENSITIVITY')
+        )
+
+    @classmethod
+    def get_dead_zone(cls, raw_dead_zone, magnitude):
+        return raw_dead_zone * magnitude
 
     def get_thumbs_dead_zone(self):
-        dead_zone = self.config['general'].getfloat('THUMBS_DEAD_ZONE')
-        magnitude = self.config['general'].getint('THUMBS_MAGNITUDE')
-        return dead_zone * magnitude
+        return self.get_dead_zone(
+            self.config.getfloat('THUMBS_DEAD_ZONE'),
+            self.config.getint('THUMBS_MAGNITUDE')
+        )
 
     def get_triggers_dead_zone(self):
-        dead_zone = self.config['general'].getfloat('TRIGGERS_DEAD_ZONE')
-        magnitude = self.config['general'].getint('TRIGGERS_MAGNITUDE')
-        return dead_zone * magnitude
+        return self.get_dead_zone(
+            self.config.getfloat('TRIGGERS_DEAD_ZONE'),
+            self.config.getint('TRIGGERS_MAGNITUDE')
+        )
 
     def get_state(self):
         self.api.XInputGetState(ctypes.wintypes.WORD(0), ctypes.pointer(self.state))

@@ -44,7 +44,7 @@ class Gamepad:
 
         config.read(profile)
         self.config = config
-        self.api = XInput(profile)
+        self.api = XInput(config['general'])
         self.mouse_scroll_events = {
             'MOUSE_SCROLL_DOWN': -float(self.config['general']['SCROLL_SPEED']),
             'MOUSE_SCROLL_UP': float(self.config['general']['SCROLL_SPEED'])
