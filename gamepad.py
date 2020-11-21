@@ -129,13 +129,11 @@ class Gamepad:
             self.mouse.button_up(action)
             self._is_pressed[button] = False
 
-    # TODO: handle scroll
     def scroll_mouse(self, action):
-        # if action == 'MOUSE_SCROLL_DOWN':
-        #     mouse.wheel(self.mouse_scroll_events['MOUSE_SCROLL_DOWN'])
-        # if action == 'MOUSE_SCROLL_UP':
-        #     mouse.wheel(self.mouse_scroll_events['MOUSE_SCROLL_UP'])
-        pass
+        if action == 'MOUSE_SCROLL_UP':
+            self.mouse.scroll('MOUSE_SCROLL_UP')
+        if action == 'MOUSE_SCROLL_DOWN':
+            self.mouse.scroll('MOUSE_SCROLL_DOWN')
 
     def is_mouse_scroll(self, action):
         if action in self.mouse_scroll_events:
@@ -153,11 +151,11 @@ class Gamepad:
         if self.is_mouse_move(action):
             self.move_mouse(button, action)
             return
-        if self.is_key_press(button):
-            self.press_key(button, action)
         if self.is_mouse_scroll(action):
             self.scroll_mouse(action)
             return
+        if self.is_key_press(button):
+            self.press_key(button, action)
 
     def release_key(self, button):
         action = self.config['controls'][button]

@@ -23,6 +23,9 @@ class Mouse:
         'MOUSE_SCROLL_UP'
     }
 
+    MOUSEEVENTF_WHEEL = 0x0800
+    WHEEL_DELTA = 120
+
     def move(self, x, y):
         inputs = Inputs()
         inputs.mi = MouseInput(
@@ -100,6 +103,30 @@ class Mouse:
         cls.api.SendInput(1, ctypes.pointer(input), ctypes.sizeof(input))
 
     @classmethod
-    def click(cls, button='lmb'):
+    def click(cls, button='MOUSE_LEFT'):
         cls.button_down(button)
         cls.button_up(button)
+
+    @classmethod
+    def scroll(cls, button):
+        inputs = Inputs()
+        if button == 'MOUSE_SCROLL_UP':
+            inputs.mi = MouseInput(
+                ctypes.c_long(0),
+                ctypes.c_long(0),
+                cls.WHEEL_DELTA,
+                cls.MOUSEEVENTF_WHEEL,
+                ctypes.c_ulong(0)
+            )
+        elif button == 'MOUSE_SCROLL_DOWN':
+            inputs.mi = MouseInput(
+                ctypes.c_long(0),
+                ctypes.c_long(0),
+                -cls.WHEEL_DELTA,
+                cls.MOUSEEVENTF_WHEEL,
+                ctypes.c_ulong(0)
+            )
+        else:
+            raise Exception('Wrong scroll event.')
+        input = Input(ctypes.c_ulong(0), inputs)
+        cls.api.SendInput(1, ctypes.pointer(input), ctypes.sizeof(input))
