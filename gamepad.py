@@ -65,18 +65,18 @@ class Gamepad:
             'MOUSE_SCROLL_UP': float(self.config['general']['SCROLL_SPEED'])
         }
 
-    # TODO: method doesn't work
     @classmethod
     def from_profile(cls):
         profiles = [profile for profile in os.listdir('.') if profile.endswith('.ini')]
         if len(profiles) == 1:
+            cls.validate_profile(profiles[0])
             return cls(profiles[0])
         print('Select profile:')
         for i in range(len(profiles)):
             print('{}. {}'.format(i, profiles[i]))
         print()
 
-        index = 0
+        index = None
         while True:
             choice = input('Select profile: ')
             try:
@@ -88,22 +88,29 @@ class Gamepad:
                 print('Invalid value.')
                 continue
             break
-        cls.validate_profile(profiles[index])
+        cls.validate_profile(profiles[0])
         return cls(profiles[index])
 
+    # TODO: validate the rest of the profile
     @classmethod
     def validate_profile(cls, profile):
         config = ConfigParser()
         config.read(profile)
+        print('Checking profile...')
         if 'general' not in config:
             print('No "general" section in loaded profile.')
             sys.exit()
         for option in config['general']:
+            if '.' in config['general'][option]:
+                func = float
+            else:
+                func = int
             try:
-                int(config['general'][option])
+                func(config['general'][option])
             except ValueError:
-                print('Invalid "{}" option value.'.format(option))
+                print('Invalid "{}" option value.'.format(option.upper()))
                 sys.exit()
+        print('Profile OK!')
 
     def run(self):
         self.detect_button_press()
@@ -233,7 +240,7 @@ class Gamepad:
 # TODO: handle hot plug (print a msg)
 if __name__ == '__main__':
     gamepad = Gamepad.from_profile()
-    print('XBox Controller Mapper started. Press Ctrl+C to stop.')
+    print('XBox Controller Mapper has started. Press Ctrl+C to stop.')
     while True:
         gamepad.run()
         sleep(float(gamepad.config['general']['DELAY']))
